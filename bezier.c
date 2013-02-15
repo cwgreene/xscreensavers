@@ -6,7 +6,7 @@
 #include <X11/Xlib.h>
 
 enum PType {End, Mid};
-typedef struct {int x; int y; int type;} point;
+typedef struct {double x; double y; int type;} point;
 
 Display *display;
 GC gc;
@@ -73,7 +73,7 @@ void draw_lines(point *points) {
     }
 }
 
-#define MAX_POINTS 4
+#define MAX_POINTS 16
 #define MAX_TIME 1000
 #define SHORT_SLEEP 10*1000
 #define FINISH_SLEEP 1000*1000
