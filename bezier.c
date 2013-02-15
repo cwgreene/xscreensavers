@@ -34,11 +34,11 @@ point bezier(point *points, float t) {
         return points[0];
     }
     int i;
-    for(i = 0; points[i+1].type != End; i++) {
+    for(i = 0; points[i].type != End; i++) {
         draw_line(points[i], points[i+1], t);
         points[i] = inter_point(points[i], points[i+1], t);
     }
-    points[i].type = End;
+    points[i-1].type = End;
     return bezier(points, t);
 }
 
@@ -63,17 +63,17 @@ void init_points(point *points, int count) {
         points[i].y = random() % height;
         points[i].type = Mid;
     }
-    points[i].type = End;
+    points[i-1].type = End;
 }
 
 void draw_lines(point *points) {
     int i;
-    for(i = 0; points[i+1].type != End; i++) {
+    for(i = 0; points[i].type != End; i++) {
         draw_line(points[i], points[i+1], 0);
     }
 }
 
-#define MAX_POINTS 8
+#define MAX_POINTS 4
 #define MAX_TIME 1000
 #define SHORT_SLEEP 10*1000
 #define FINISH_SLEEP 1000*1000
@@ -102,7 +102,7 @@ int main() {
             usleep(SHORT_SLEEP);
         }
         XClearWindow(display, window_id);
-        sequence[i].type = End;
+        sequence[i-1].type = End;
         draw_lines(sequence);
         XFlush(display);
         usleep(FINISH_SLEEP);
