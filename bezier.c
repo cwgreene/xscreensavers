@@ -11,15 +11,18 @@ typedef struct {double x; double y; int type;} point;
 Display *display;
 GC gc;
 Window window_id;
-
+Pixmap pixmap;
+int width;
+int height;
+int depth;
 
 draw_line(point a, point b, float t) {
-    XDrawLine(display, window_id, gc, a.x, a.y, b.x, b.y);
+    XDrawLine(display, pixmap, gc, a.x, a.y, b.x, b.y);
 }
 
 draw_point(point a) {
     static int diameter = 5;
-    XFillArc(display, window_id, gc,
+    XFillArc(display, pixmap, gc,
         a.x, a.y, diameter, diameter, 360*64, 360*64);
 }
 
@@ -51,13 +54,16 @@ long xscreen_window() {
     return strtol(xscreen_id, 0, 16);
 }
 
+void get_dimensions() {
+    long dummy_id;
+    int dummy;
+    XGetGeometry(display, window_id, &dummy_id,
+              &dummy, &dummy, &width, &height, &dummy, &depth);
+}
+
 void init_points(point *points, int count) {
     int i;
-    long dummy_id;
-    int width, height, dummy;
-    XGetGeometry(display, window_id, &dummy_id,
-              &dummy, &dummy, &width, &height, &dummy, &dummy);
-
+    
     for(i = 0; i < count; i++) {
         points[i].x = random() % width;
         points[i].y = random() % height;
@@ -73,6 +79,17 @@ void draw_lines(point *points) {
     }
 }
 
+void xclear() {
+    XSetForeground(display, gc, XBlackPixel(display, 0));
+    XFillRectangle(display, pixmap, gc, 0,0, width, height);
+    XSetForeground(display, gc, XWhitePixel(display, 0));
+}
+
+void xcopy() {
+    XCopyArea(display, pixmap, window_id, gc, 0, 0, width, height, 0, 0);
+    XFlush(display);
+}
+
 #define MAX_POINTS 16
 #define MAX_TIME 1000
 #define SHORT_SLEEP 10*1000
@@ -82,7 +99,9 @@ int main() {
     printf("Welcome!\n");
     display = XOpenDisplay(getenv("DISPLAY"));
     window_id = xscreen_window();
+    get_dimensions();
     gc = XCreateGC(display, window_id, 0, NULL);
+    pixmap = XCreatePixmap(display, window_id, width, height, depth);
     int i;
     point points[MAX_POINTS];
     point sequence[MAX_TIME];
@@ -92,19 +111,19 @@ int main() {
         init_points(points, MAX_POINTS); 
         point temp_points[MAX_POINTS];
         for(i = 0; i < MAX_TIME; i += 1) {
+            xclear();
             float t = i / (float) MAX_TIME;
-            XClearWindow(display, window_id);
             memcpy(temp_points, points, MAX_POINTS*sizeof(point));   
             sequence[i] = bezier(temp_points, t);
             draw_lines(sequence);
             sequence[i].type = Mid;
-            XFlush(display);
+            xcopy();
             usleep(SHORT_SLEEP);
         }
-        XClearWindow(display, window_id);
+        xclear();
         sequence[i-1].type = End;
         draw_lines(sequence);
-        XFlush(display);
+        xcopy();
         usleep(FINISH_SLEEP);
     }
 }
