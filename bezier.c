@@ -90,6 +90,11 @@ void xcopy() {
     XFlush(display);
 }
 
+void color(char *color, XColor *result) {
+    XParseColor(display, DefaultColormap(display,0), color, result);
+    XAllocColor(display, DefaultColormap(display,0), result);
+}
+
 #define MAX_POINTS 16
 #define MAX_TIME 1000
 #define SHORT_SLEEP 10*1000
@@ -102,6 +107,8 @@ int main() {
     get_dimensions();
     gc = XCreateGC(display, window_id, 0, NULL);
     pixmap = XCreatePixmap(display, window_id, width, height, depth);
+    XColor red;
+    color("#FF0000", &red);
     int i;
     point points[MAX_POINTS];
     point sequence[MAX_TIME];
@@ -114,7 +121,9 @@ int main() {
             xclear();
             float t = i / (float) MAX_TIME;
             memcpy(temp_points, points, MAX_POINTS*sizeof(point));   
+            XSetForeground(display, gc, XWhitePixel(display, 0));
             sequence[i] = bezier(temp_points, t);
+            XSetForeground(display, gc, red.pixel);
             draw_lines(sequence);
             sequence[i].type = Mid;
             xcopy();
@@ -122,6 +131,7 @@ int main() {
         }
         xclear();
         sequence[i-1].type = End;
+        XSetForeground(display, gc, red.pixel);
         draw_lines(sequence);
         xcopy();
         usleep(FINISH_SLEEP);
